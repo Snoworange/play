@@ -123,8 +123,8 @@ public class PlayHandler extends SimpleChannelUpstreamHandler {
         } catch (NoSuchAlgorithmException e) {
             throw new InternalError("SHA-1 not supported on this platform");
         }
-    } 
-    
+    }
+
     static {
         exposePlayServer = !"false".equals(Play.configuration.getProperty("http.exposePlayServer"));
     }
@@ -467,7 +467,7 @@ public class PlayHandler extends SimpleChannelUpstreamHandler {
         }
 
         final boolean keepAlive = isKeepAlive(nettyRequest);
-		// bran 
+		// bran
 		if (keepAlive)
 			addKeepAliveHeader(nettyResponse);
 
@@ -489,7 +489,7 @@ public class PlayHandler extends SimpleChannelUpstreamHandler {
                     try {
                         FileService.serve(file, nettyRequest, nettyResponse, ctx, request, response, ctx.getChannel());
                     } catch (Throwable exx) {
-                        
+
                         try {
                             ctx.getChannel().close();
                         } catch (Throwable ex) { /* Left empty */ }
@@ -663,8 +663,9 @@ public class PlayHandler extends SimpleChannelUpstreamHandler {
 
     protected static Map<String, Http.Cookie> getCookies(HttpRequest nettyRequest) {
         Map<String, Http.Cookie> cookies = new HashMap<String, Http.Cookie>(16);
-        String value = nettyRequest.getHeader(COOKIE);
-        if (value != null) {
+        try {
+          String value = nettyRequest.getHeader(COOKIE);
+          if (value != null) {
             Set<Cookie> cookieSet = new CookieDecoder().decode(value);
             if (cookieSet != null) {
                 for (Cookie cookie : cookieSet) {
@@ -678,6 +679,9 @@ public class PlayHandler extends SimpleChannelUpstreamHandler {
                     cookies.put(playCookie.name, playCookie);
                 }
             }
+          }
+        } catch (Exception e) {
+          Logger.info("CookieDecoder error is "+ e.getMessage());
         }
         return cookies;
     }
@@ -709,8 +713,8 @@ public class PlayHandler extends SimpleChannelUpstreamHandler {
 
         // bran let's decouple the template system from this handler
 //        String errorHtml = TemplateLoader.load("errors/404." + format).render(binding);
-//        String errorHtml = Play.getErrorPage(404, Play.PageFormat.from(format), binding);        
-        
+//        String errorHtml = Play.getErrorPage(404, Play.PageFormat.from(format), binding);
+
         String errorHtml = TemplateLoader.load("errors/404." + format).render(binding);
 
         try {
@@ -851,7 +855,7 @@ public class PlayHandler extends SimpleChannelUpstreamHandler {
             Logger.trace("serve500: end");
         }
     }
-    
+
     public void serveStatic(RenderStatic renderStatic, ChannelHandlerContext ctx, Request request, Response response, HttpRequest nettyRequest, MessageEvent e) {
         if (Logger.isTraceEnabled()) {
             Logger.trace("serveStatic: begin");
@@ -987,15 +991,15 @@ public class PlayHandler extends SimpleChannelUpstreamHandler {
     }
 
 	/**
-	 * bran: http 1.1 defaults to keep-alive, but 1.0 has no spec about it. Some browsers will observe 
-	 * the Connection: Keep-Alive header. 
-	 * 
+	 * bran: http 1.1 defaults to keep-alive, but 1.0 has no spec about it. Some browsers will observe
+	 * the Connection: Keep-Alive header.
+	 *
 	 * @param nettyResponse
 	 */
 	static public void addKeepAliveHeader(HttpResponse nettyResponse) {
 		nettyResponse.setHeader("Connection", "Keep-Alive");
 	}
-	
+
     // Chunked response
 
     final ChunkedWriteHandler chunkedWriteHandler = new ChunkedWriteHandler();
@@ -1079,7 +1083,7 @@ public class PlayHandler extends SimpleChannelUpstreamHandler {
             inbound._received(new Http.WebSocketFrame(((TextWebSocketFrame)webSocketFrame).getText()));
         }
     }
-    
+
     private String getWebSocketLocation(HttpRequest req) {
         return "ws://" + req.getHeader(HttpHeaders.Names.HOST) + req.getUri();
     }
